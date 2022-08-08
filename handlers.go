@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 
@@ -56,6 +57,13 @@ func (dht *IpfsDHT) handleGetValue(ctx context.Context, p peer.ID, pmes *pb.Mess
 	k := pmes.GetKey()
 	if len(k) == 0 {
 		return nil, errors.New("handleGetValue but no key was provided")
+	}
+
+	mcid, err := cid.Cast(pmes.GetKey())
+	if err == nil {
+		fmt.Print(time.Now(), ",", "MSG_GET_VALUE", ",", p, ",", mcid.String(), "\n")
+	} else {
+		fmt.Print(time.Now(), ",", "MSG_GET_VALUE", ",", p, ",", pmes.GetKey(), "\n")
 	}
 
 	// setup response
@@ -151,6 +159,13 @@ func cleanRecord(rec *recpb.Record) {
 func (dht *IpfsDHT) handlePutValue(ctx context.Context, p peer.ID, pmes *pb.Message) (_ *pb.Message, err error) {
 	if len(pmes.GetKey()) == 0 {
 		return nil, errors.New("handleGetValue but no key was provided")
+	}
+
+	mcid, err := cid.Cast(pmes.GetKey())
+	if err == nil {
+		fmt.Print(time.Now(), ",", "MSG_PUT_VALUE", ",", p, ",", mcid.String(), "\n")
+	} else {
+		fmt.Print(time.Now(), ",", "MSG_PUT_VALUE", ",", p, ",", pmes.GetKey(), "\n")
 	}
 
 	rec := pmes.GetRecord()
@@ -262,6 +277,7 @@ func (dht *IpfsDHT) handleFindPeer(ctx context.Context, from peer.ID, pmes *pb.M
 
 	// if looking for self... special case where we send it on CloserPeers.
 	targetPid := peer.ID(pmes.GetKey())
+	fmt.Print(time.Now(), ",", "MSG_FIND_PEER", ",", from, ",", targetPid, "\n")
 	if targetPid == dht.self {
 		closest = []peer.ID{dht.self}
 	} else {
@@ -314,6 +330,13 @@ func (dht *IpfsDHT) handleGetProviders(ctx context.Context, p peer.ID, pmes *pb.
 		return nil, fmt.Errorf("handleGetProviders key is empty")
 	}
 
+	mcid, err := cid.Cast(pmes.GetKey())
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Print(time.Now(), ",", "MSG_GET_PROVIDERS", ",", p, ",", mcid.String(), "\n")
+
 	resp := pb.NewMessage(pmes.GetType(), pmes.GetKey(), pmes.GetClusterLevel())
 
 	// setup providers
@@ -361,6 +384,13 @@ func (dht *IpfsDHT) handleAddProvider(ctx context.Context, p peer.ID, pmes *pb.M
 
 		dht.providerStore.AddProvider(ctx, key, peer.AddrInfo{ID: p})
 	}
+
+	mcid, err := cid.Cast(pmes.GetKey())
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Print(time.Now(), ",", "MSG_ADD_PROVIDERS", ",", p, ",", mcid.String(), "\n")
 
 	return nil, nil
 }
