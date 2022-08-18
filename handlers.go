@@ -264,6 +264,7 @@ func (dht *IpfsDHT) getRecordFromDatastore(ctx context.Context, dskey ds.Key) (*
 
 func (dht *IpfsDHT) handlePing(_ context.Context, p peer.ID, pmes *pb.Message) (*pb.Message, error) {
 	logger.Debugf("%s Responding to ping from %s!\n", dht.self, p)
+	fmt.Print(time.Now(), ",", "MSG_PING", ",", p, ",", "\n")
 	return pmes, nil
 }
 

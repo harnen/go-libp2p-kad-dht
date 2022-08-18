@@ -100,7 +100,6 @@ func (dht *IpfsDHT) handleNewMessage(s network.Stream) bool {
 			metrics.ReceivedMessages.M(1),
 			metrics.ReceivedBytes.M(int64(msgLen)),
 		)
-		fmt.Print(s.Conn().RemoteMultiaddr().String(), ",")
 		handler := dht.handlerForMsgType(req.GetType())
 		if handler == nil {
 			stats.Record(ctx, metrics.ReceivedMessageErrors.M(1))
@@ -119,6 +118,9 @@ func (dht *IpfsDHT) handleNewMessage(s network.Stream) bool {
 				zap.Int32("type", int32(req.GetType())),
 				zap.Binary("key", req.GetKey()))
 		}
+		//print network info about the peer sending us a message
+		//message specific information is printed from the handlers
+		fmt.Print(s.Conn().RemoteMultiaddr().String(), ",")
 		resp, err := handler(ctx, mPeer, &req)
 		if err != nil {
 			stats.Record(ctx, metrics.ReceivedMessageErrors.M(1))
