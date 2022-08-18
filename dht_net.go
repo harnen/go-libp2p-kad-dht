@@ -1,6 +1,7 @@
 package dht
 
 import (
+	"fmt"
 	"io"
 	"time"
 
@@ -99,7 +100,7 @@ func (dht *IpfsDHT) handleNewMessage(s network.Stream) bool {
 			metrics.ReceivedMessages.M(1),
 			metrics.ReceivedBytes.M(int64(msgLen)),
 		)
-
+		fmt.Print(s.Conn().RemoteMultiaddr().String(), ",")
 		handler := dht.handlerForMsgType(req.GetType())
 		if handler == nil {
 			stats.Record(ctx, metrics.ReceivedMessageErrors.M(1))
