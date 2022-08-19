@@ -81,7 +81,7 @@ func TestBadMessage(t *testing.T) {
 			Type: typ,
 			// explicitly avoid the key.
 		}
-		_, err := dht.handlerForMsgType(typ)(ctx, dht.Host().ID(), msg)
+		_, err := dht.handlerForMsgType(typ)(ctx, dht.Host().ID(), msg, "")
 		if err == nil {
 			t.Fatalf("expected processing message to fail for type %s", pb.Message_FIND_NODE)
 		}
@@ -132,7 +132,7 @@ func BenchmarkHandleFindPeer(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err = d.handleFindPeer(ctx, peers[0], reqs[i])
+		_, err = d.handleFindPeer(ctx, peers[0], reqs[i], "")
 		if err != nil {
 			b.Error(err)
 		}

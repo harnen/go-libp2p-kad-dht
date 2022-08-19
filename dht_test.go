@@ -1237,7 +1237,7 @@ func TestBadProtoMessages(t *testing.T) {
 	d := setupDHT(ctx, t, false)
 
 	nilrec := new(pb.Message)
-	if _, err := d.handlePutValue(ctx, "testpeer", nilrec); err == nil {
+	if _, err := d.handlePutValue(ctx, "testpeer", nilrec, ""); err == nil {
 		t.Fatal("should have errored on nil record")
 	}
 }
@@ -1255,7 +1255,7 @@ func TestAtomicPut(t *testing.T) {
 		rec := record.MakePutRecord(key, value)
 		pmes := pb.NewMessage(pb.Message_PUT_VALUE, rec.Key, 0)
 		pmes.Record = rec
-		_, err := d.handlePutValue(ctx, "testpeer", pmes)
+		_, err := d.handlePutValue(ctx, "testpeer", pmes, "")
 		return err
 	}
 
@@ -1278,7 +1278,7 @@ func TestAtomicPut(t *testing.T) {
 
 	// get should return the newest value
 	pmes := pb.NewMessage(pb.Message_GET_VALUE, []byte(key), 0)
-	msg, err := d.handleGetValue(ctx, "testkey", pmes)
+	msg, err := d.handleGetValue(ctx, "testkey", pmes, "")
 	if err != nil {
 		t.Fatalf("should not have errored on final get, but got %+v", err)
 	}

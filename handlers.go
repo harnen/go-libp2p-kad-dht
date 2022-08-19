@@ -21,7 +21,7 @@ import (
 )
 
 // dhthandler specifies the signature of functions that handle DHT messages.
-type dhtHandler func(context.Context, peer.ID, *pb.Message) (*pb.Message, error)
+type dhtHandler func(context.Context, peer.ID, *pb.Message, string) (*pb.Message, error)
 
 func (dht *IpfsDHT) handlerForMsgType(t pb.Message_MessageType) dhtHandler {
 	switch t {
@@ -52,7 +52,7 @@ func (dht *IpfsDHT) handlerForMsgType(t pb.Message_MessageType) dhtHandler {
 	return nil
 }
 
-func (dht *IpfsDHT) handleGetValue(ctx context.Context, p peer.ID, pmes *pb.Message) (_ *pb.Message, err error) {
+func (dht *IpfsDHT) handleGetValue(ctx context.Context, p peer.ID, pmes *pb.Message, multiaddr string) (_ *pb.Message, err error) {
 	// first, is there even a key?
 	k := pmes.GetKey()
 	if len(k) == 0 {
@@ -61,9 +61,9 @@ func (dht *IpfsDHT) handleGetValue(ctx context.Context, p peer.ID, pmes *pb.Mess
 
 	mcid, err := cid.Cast(pmes.GetKey())
 	if err == nil {
-		fmt.Print(time.Now(), ",", "MSG_GET_VALUE", ",", p, ",", mcid.String(), "\n")
+		fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_GET_VALUE", ",", p, ",", mcid.String(), "\n")
 	} else {
-		fmt.Print(time.Now(), ",", "MSG_GET_VALUE", ",", p, ",", pmes.GetKey(), "\n")
+		fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_GET_VALUE", ",", p, ",", pmes.GetKey(), "\n")
 	}
 
 	// setup response
@@ -156,16 +156,16 @@ func cleanRecord(rec *recpb.Record) {
 }
 
 // Store a value in this peer local storage
-func (dht *IpfsDHT) handlePutValue(ctx context.Context, p peer.ID, pmes *pb.Message) (_ *pb.Message, err error) {
+func (dht *IpfsDHT) handlePutValue(ctx context.Context, p peer.ID, pmes *pb.Message, multiaddr string) (_ *pb.Message, err error) {
 	if len(pmes.GetKey()) == 0 {
 		return nil, errors.New("handleGetValue but no key was provided")
 	}
 
 	mcid, err := cid.Cast(pmes.GetKey())
 	if err == nil {
-		fmt.Print(time.Now(), ",", "MSG_PUT_VALUE", ",", p, ",", mcid.String(), "\n")
+		fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_PUT_VALUE", ",", p, ",", mcid.String(), "\n")
 	} else {
-		fmt.Print(time.Now(), ",", "MSG_PUT_VALUE", ",", p, ",", pmes.GetKey(), "\n")
+		fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_PUT_VALUE", ",", p, ",", pmes.GetKey(), "\n")
 	}
 
 	rec := pmes.GetRecord()
@@ -262,13 +262,13 @@ func (dht *IpfsDHT) getRecordFromDatastore(ctx context.Context, dskey ds.Key) (*
 	return rec, nil
 }
 
-func (dht *IpfsDHT) handlePing(_ context.Context, p peer.ID, pmes *pb.Message) (*pb.Message, error) {
+func (dht *IpfsDHT) handlePing(_ context.Context, p peer.ID, pmes *pb.Message, multiaddr string) (*pb.Message, error) {
 	logger.Debugf("%s Responding to ping from %s!\n", dht.self, p)
-	fmt.Print(time.Now(), ",", "MSG_PING", ",", p, ",", "\n")
+	fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_PING", ",", p, ",", "\n")
 	return pmes, nil
 }
 
-func (dht *IpfsDHT) handleFindPeer(ctx context.Context, from peer.ID, pmes *pb.Message) (_ *pb.Message, _err error) {
+func (dht *IpfsDHT) handleFindPeer(ctx context.Context, from peer.ID, pmes *pb.Message, multiaddr string) (_ *pb.Message, _err error) {
 	resp := pb.NewMessage(pmes.GetType(), nil, pmes.GetClusterLevel())
 	var closest []peer.ID
 
@@ -278,7 +278,7 @@ func (dht *IpfsDHT) handleFindPeer(ctx context.Context, from peer.ID, pmes *pb.M
 
 	// if looking for self... special case where we send it on CloserPeers.
 	targetPid := peer.ID(pmes.GetKey())
-	fmt.Print(time.Now(), ",", "MSG_FIND_PEER", ",", from, ",", targetPid, "\n")
+	fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_FIND_PEER", ",", from, ",", targetPid, "\n")
 	if targetPid == dht.self {
 		closest = []peer.ID{dht.self}
 	} else {
@@ -323,7 +323,7 @@ func (dht *IpfsDHT) handleFindPeer(ctx context.Context, from peer.ID, pmes *pb.M
 	return resp, nil
 }
 
-func (dht *IpfsDHT) handleGetProviders(ctx context.Context, p peer.ID, pmes *pb.Message) (_ *pb.Message, _err error) {
+func (dht *IpfsDHT) handleGetProviders(ctx context.Context, p peer.ID, pmes *pb.Message, multiaddr string) (_ *pb.Message, _err error) {
 	key := pmes.GetKey()
 	if len(key) > 80 {
 		return nil, fmt.Errorf("handleGetProviders key size too large")
@@ -336,7 +336,7 @@ func (dht *IpfsDHT) handleGetProviders(ctx context.Context, p peer.ID, pmes *pb.
 		return nil, err
 	}
 
-	fmt.Print(time.Now(), ",", "MSG_GET_PROVIDERS", ",", p, ",", mcid.String(), "\n")
+	fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_GET_PROVIDERS", ",", p, ",", mcid.String(), "\n")
 
 	resp := pb.NewMessage(pmes.GetType(), pmes.GetKey(), pmes.GetClusterLevel())
 
@@ -358,7 +358,7 @@ func (dht *IpfsDHT) handleGetProviders(ctx context.Context, p peer.ID, pmes *pb.
 	return resp, nil
 }
 
-func (dht *IpfsDHT) handleAddProvider(ctx context.Context, p peer.ID, pmes *pb.Message) (_ *pb.Message, _err error) {
+func (dht *IpfsDHT) handleAddProvider(ctx context.Context, p peer.ID, pmes *pb.Message, multiaddr string) (_ *pb.Message, _err error) {
 	key := pmes.GetKey()
 	if len(key) > 80 {
 		return nil, fmt.Errorf("handleAddProvider key size too large")
@@ -391,7 +391,7 @@ func (dht *IpfsDHT) handleAddProvider(ctx context.Context, p peer.ID, pmes *pb.M
 		return nil, err
 	}
 
-	fmt.Print(time.Now(), ",", "MSG_ADD_PROVIDERS", ",", p, ",", mcid.String(), "\n")
+	fmt.Print(multiaddr, ",", time.Now(), ",", "MSG_ADD_PROVIDERS", ",", p, ",", mcid.String(), "\n")
 
 	return nil, nil
 }

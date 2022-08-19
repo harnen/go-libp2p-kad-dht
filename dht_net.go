@@ -1,7 +1,6 @@
 package dht
 
 import (
-	"fmt"
 	"io"
 	"time"
 
@@ -118,10 +117,8 @@ func (dht *IpfsDHT) handleNewMessage(s network.Stream) bool {
 				zap.Int32("type", int32(req.GetType())),
 				zap.Binary("key", req.GetKey()))
 		}
-		//print network info about the peer sending us a message
-		//message specific information is printed from the handlers
-		fmt.Print(s.Conn().RemoteMultiaddr().String(), ",")
-		resp, err := handler(ctx, mPeer, &req)
+
+		resp, err := handler(ctx, mPeer, &req, s.Conn().RemoteMultiaddr().String())
 		if err != nil {
 			stats.Record(ctx, metrics.ReceivedMessageErrors.M(1))
 			if c := baseLogger.Check(zap.DebugLevel, "error handling message"); c != nil {
